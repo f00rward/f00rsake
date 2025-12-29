@@ -1,0 +1,59 @@
+-- Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Character / HRP getter (respawn-safe)
+local function getHRP()
+	local character = player.Character or player.CharacterAdded:Wait()
+	return character:WaitForChild("HumanoidRootPart")
+end
+
+-- GUI setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Gold Button
+local goldButton = Instance.new("TextButton")
+goldButton.Size = UDim2.new(0, 120, 0, 40)
+goldButton.Position = UDim2.new(0, 20, 0.5, -50)
+goldButton.Text = "Gold"
+goldButton.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+goldButton.TextColor3 = Color3.new(0, 0, 0)
+goldButton.Parent = screenGui
+
+-- TP Button
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0, 120, 0, 40)
+tpButton.Position = UDim2.new(0, 20, 0.5, 10)
+tpButton.Text = "TP"
+tpButton.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
+tpButton.TextColor3 = Color3.new(0, 0, 0)
+tpButton.Parent = screenGui
+
+-- GOLD BUTTON
+goldButton.MouseButton1Click:Connect(function()
+	local hrp = getHRP()
+
+	local containers = workspace:WaitForChild("Containers")
+	local largeGold = containers:WaitForChild("Large Gold")
+
+	local targetCFrame
+	if largeGold:IsA("Model") then
+		targetCFrame = largeGold:GetPivot()
+	elseif largeGold:IsA("BasePart") then
+		targetCFrame = largeGold.CFrame
+	else
+		warn("Large Gold is not a Model or BasePart")
+		return
+	end
+
+	hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+end)
+
+-- TP BUTTON
+tpButton.MouseButton1Click:Connect(function()
+	local hrp = getHRP()
+	hrp.CFrame = CFrame.new(77.567, 764, -449.749)
+end)

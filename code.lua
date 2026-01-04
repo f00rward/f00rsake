@@ -1,3 +1,4 @@
+task.wait(12)
 -- =========================
 -- CAMERA ZOOM + LOOK DOWN
 -- =========================
@@ -8,7 +9,7 @@ local camera = workspace.CurrentCamera
 local minZoom = 0.5
 local zoomStep = 1
 local zoomDelay = 0.02
-local tiltDegrees = -90
+local tiltDegrees = -89
 
 -- allow closest zoom
 player.CameraMinZoomDistance = minZoom

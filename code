@@ -1,59 +1,104 @@
--- Services
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+-- =========================
+-- CAMERA ZOOM + LOOK DOWN
+-- =========================
+local player = game.Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
--- Character / HRP getter (respawn-safe)
-local function getHRP()
-	local character = player.Character or player.CharacterAdded:Wait()
-	return character:WaitForChild("HumanoidRootPart")
+-- camera settings
+local minZoom = 0.5
+local zoomStep = 1
+local zoomDelay = 0.02
+local tiltDegrees = -90
+
+-- allow closest zoom
+player.CameraMinZoomDistance = minZoom
+
+-- smooth scroll-style zoom in
+for z = player.CameraMaxZoomDistance, minZoom, -zoomStep do
+	player.CameraMaxZoomDistance = z
+	task.wait(zoomDelay)
+end
+player.CameraMaxZoomDistance = minZoom
+
+-- slight pause so zoom finishes
+task.wait(0.05)
+
+-- tilt camera downward (still active camera)
+camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(tiltDegrees), 0, 0)
+
+-- =========================
+-- SETTINGS
+-- =========================
+local cooldown = 0.2
+local uiBuffer = 0.15
+local containerFolder = workspace:WaitForChild("Containers")
+
+local targetNames = {
+	"Bronze",
+	"Gold",
+	"Wood",
+    "Large Gold"
+}
+
+-- COORDINATES AFTER LARGE GOLD
+local finalTeleportPosition = Vector3.new(77.567, 764, -449.749)
+
+-- PLAYER
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- =========================
+-- STEP 1: INSTANT PROMPTS
+-- =========================
+for _, obj in ipairs(workspace:GetDescendants()) do
+	if obj:IsA("ProximityPrompt") then
+		obj.HoldDuration = 0
+	end
 end
 
--- GUI setup
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TeleportGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
--- Gold Button
-local goldButton = Instance.new("TextButton")
-goldButton.Size = UDim2.new(0, 120, 0, 40)
-goldButton.Position = UDim2.new(0, 20, 0.5, -50)
-goldButton.Text = "Gold"
-goldButton.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-goldButton.TextColor3 = Color3.new(0, 0, 0)
-goldButton.Parent = screenGui
-
--- TP Button
-local tpButton = Instance.new("TextButton")
-tpButton.Size = UDim2.new(0, 120, 0, 40)
-tpButton.Position = UDim2.new(0, 20, 0.5, 10)
-tpButton.Text = "TP"
-tpButton.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
-tpButton.TextColor3 = Color3.new(0, 0, 0)
-tpButton.Parent = screenGui
-
--- GOLD BUTTON
-goldButton.MouseButton1Click:Connect(function()
-	local hrp = getHRP()
-
-	local containers = workspace:WaitForChild("Containers")
-	local largeGold = containers:WaitForChild("Large Gold")
-
-	local targetCFrame
-	if largeGold:IsA("Model") then
-		targetCFrame = largeGold:GetPivot()
-	elseif largeGold:IsA("BasePart") then
-		targetCFrame = largeGold.CFrame
-	else
-		warn("Large Gold is not a Model or BasePart")
-		return
+workspace.DescendantAdded:Connect(function(obj)
+	if obj:IsA("ProximityPrompt") then
+		obj.HoldDuration = 0
 	end
-
-	hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
 end)
 
--- TP BUTTON
-tpButton.MouseButton1Click:Connect(function()
-	local hrp = getHRP()
-	hrp.CFrame = CFrame.new(77.567, 764, -449.749)
-end)
+-- UTILITY
+local function getCFrame(obj)
+	if obj:IsA("Model") then
+		return obj:GetPivot()
+	elseif obj:IsA("BasePart") then
+		return obj.CFrame
+	end
+end
+
+-- =========================
+-- TELEPORT + PRESS E (UI SAFE)
+-- =========================
+for _, targetName in ipairs(targetNames) do
+	for _, container in ipairs(containerFolder:GetDescendants()) do
+		if container.Name == targetName and (container:IsA("Model") or container:IsA("BasePart")) then
+			local cf = getCFrame(container)
+			if cf then
+				-- teleport to container
+				hrp.CFrame = cf + Vector3.new(0, 3, 0)
+
+				task.wait(uiBuffer)
+
+				-- trigger prompt
+				for _, prompt in ipairs(container:GetDescendants()) do
+					if prompt:IsA("ProximityPrompt") then
+						prompt:InputHoldBegin()
+						prompt:InputHoldEnd()
+					end
+				end
+
+				task.wait(cooldown)
+
+				-- ✅ SPECIAL CASE: after Large Gold
+				if targetName == "Large Gold" then
+					hrp.CFrame = CFrame.new(finalTeleportPosition)
+				end
+			end
+		end
+	end
+end

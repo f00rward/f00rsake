@@ -38,7 +38,7 @@ local targetNames = {
 	"Bronze",
 	"Gold",
 	"Wood",
-    "Large Gold"
+    "Large Wood"
 }
 
 -- COORDINATES AFTER LARGE GOLD
@@ -96,7 +96,7 @@ for _, targetName in ipairs(targetNames) do
 				task.wait(cooldown)
 
 				-- ✅ SPECIAL CASE: after Large Gold
-				if targetName == "Large Gold" then
+				if targetName == "Large Wood" then
 					hrp.CFrame = CFrame.new(finalTeleportPosition)
 				end
 			end

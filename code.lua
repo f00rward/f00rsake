@@ -24,7 +24,7 @@ player.CameraMaxZoomDistance = minZoom
 -- slight pause so zoom finishes
 task.wait(0.05)
 
--- tilt camera downward (still active camera)
+-- tilt camera downward
 camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(tiltDegrees), 0, 0)
 
 -- =========================
@@ -37,11 +37,10 @@ local containerFolder = workspace:WaitForChild("Containers")
 local targetNames = {
 	"Bronze",
 	"Gold",
-	"Wood",
-    "Large Wood"
+	"Wood"
 }
 
--- COORDINATES AFTER LARGE GOLD
+-- FINAL TELEPORT POSITION (AFTER LAST WOOD)
 local finalTeleportPosition = Vector3.new(77.567, 764, -449.749)
 
 -- PLAYER
@@ -63,7 +62,9 @@ workspace.DescendantAdded:Connect(function(obj)
 	end
 end)
 
+-- =========================
 -- UTILITY
+-- =========================
 local function getCFrame(obj)
 	if obj:IsA("Model") then
 		return obj:GetPivot()
@@ -73,7 +74,19 @@ local function getCFrame(obj)
 end
 
 -- =========================
--- TELEPORT + PRESS E (UI SAFE)
+-- COUNT TOTAL WOOD
+-- =========================
+local totalWood = 0
+for _, container in ipairs(containerFolder:GetDescendants()) do
+	if container.Name == "Wood" then
+		totalWood += 1
+	end
+end
+
+local processedWood = 0
+
+-- =========================
+-- TELEPORT + PRESS E
 -- =========================
 for _, targetName in ipairs(targetNames) do
 	for _, container in ipairs(containerFolder:GetDescendants()) do
@@ -95,9 +108,12 @@ for _, targetName in ipairs(targetNames) do
 
 				task.wait(cooldown)
 
-				-- ✅ SPECIAL CASE: after Large Gold
-				if targetName == "Large Wood" then
-					hrp.CFrame = CFrame.new(finalTeleportPosition)
+				-- ✅ TELEPORT AFTER LAST WOOD
+				if targetName == "Wood" then
+					processedWood += 1
+					if processedWood == totalWood then
+						hrp.CFrame = CFrame.new(finalTeleportPosition)
+					end
 				end
 			end
 		end

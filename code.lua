@@ -30,7 +30,7 @@ camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(tiltDegrees), 0, 0)
 -- =========================
 -- SETTINGS
 -- =========================
-local cooldown = 0.1
+local cooldown = 0.08
 local uiBuffer = 0.15
 local containerFolder = workspace:WaitForChild("Containers")
 

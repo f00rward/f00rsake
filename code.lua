@@ -1,121 +1,120 @@
-task.wait(1)
--- =========================
--- CAMERA ZOOM + LOOK DOWN
--- =========================
-local player = game.Players.LocalPlayer
-local camera = workspace.CurrentCamera
+repeat task.wait() until game:IsLoaded()
 
--- camera settings
-local minZoom = 0.5
-local zoomStep = 1
-local zoomDelay = 0.02
-local tiltDegrees = -89
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
--- allow closest zoom
-player.CameraMinZoomDistance = minZoom
+local function runScript()
+	-- wait for fresh character
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+	local camera = workspace.CurrentCamera
 
--- smooth scroll-style zoom in
-for z = player.CameraMaxZoomDistance, minZoom, -zoomStep do
-	player.CameraMaxZoomDistance = z
-	task.wait(zoomDelay)
-end
-player.CameraMaxZoomDistance = minZoom
+	-- =========================
+	-- CAMERA
+	-- =========================
+	local minZoom = 0.5
+	local zoomStep = 1
+	local zoomDelay = 0.02
+	local tiltDegrees = -89
 
--- slight pause so zoom finishes
-task.wait(0.05)
+	player.CameraMinZoomDistance = minZoom
 
--- tilt camera downward
-camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(tiltDegrees), 0, 0)
-
--- =========================
--- SETTINGS
--- =========================
-local cooldown = 0.1
-local uiBuffer = 0.15
-local containerFolder = workspace:WaitForChild("Containers")
-
-local targetNames = {
-	"Bronze",
-	"Gold",
-	"Wood"
-}
-
--- FINAL TELEPORT POSITION (AFTER LAST WOOD)
-local finalTeleportPosition = Vector3.new(119.551, 763.407, -431.9)
-
--- PLAYER
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
--- =========================
--- STEP 1: INSTANT PROMPTS
--- =========================
-for _, obj in ipairs(workspace:GetDescendants()) do
-	if obj:IsA("ProximityPrompt") then
-		obj.HoldDuration = 0
+	for z = player.CameraMaxZoomDistance, minZoom, -zoomStep do
+		player.CameraMaxZoomDistance = z
+		task.wait(zoomDelay)
 	end
-end
 
-workspace.DescendantAdded:Connect(function(obj)
-	if obj:IsA("ProximityPrompt") then
-		obj.HoldDuration = 0
+	player.CameraMaxZoomDistance = minZoom
+	task.wait(0.08)
+
+	camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(tiltDegrees), 0, 0)
+
+	-- =========================
+	-- SETTINGS
+	-- =========================
+	local cooldown = 0.1
+	local uiBuffer = 0.15
+	local containerFolder = workspace:WaitForChild("Containers")
+
+	local targetNames = {"Bronze","Gold","Wood"}
+
+	local finalTeleportPosition = Vector3.new(119.551, 763.407, -431.9)
+
+	-- =========================
+	-- INSTANT PROMPTS
+	-- =========================
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("ProximityPrompt") then
+			obj.HoldDuration = 0
+		end
 	end
-end)
 
--- =========================
--- UTILITY
--- =========================
-local function getCFrame(obj)
-	if obj:IsA("Model") then
-		return obj:GetPivot()
-	elseif obj:IsA("BasePart") then
-		return obj.CFrame
+	workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("ProximityPrompt") then
+			obj.HoldDuration = 0
+		end
+	end)
+
+	-- =========================
+	-- UTIL
+	-- =========================
+	local function getCFrame(obj)
+		if obj:IsA("Model") then
+			return obj:GetPivot()
+		elseif obj:IsA("BasePart") then
+			return obj.CFrame
+		end
 	end
-end
 
--- =========================
--- COUNT TOTAL WOOD
--- =========================
-local totalWood = 0
-for _, container in ipairs(containerFolder:GetDescendants()) do
-	if container.Name == "Wood" then
-		totalWood += 1
-	end
-end
-
-local processedWood = 0
-
--- =========================
--- TELEPORT + PRESS E
--- =========================
-for _, targetName in ipairs(targetNames) do
+	-- =========================
+	-- COUNT WOOD
+	-- =========================
+	local totalWood = 0
 	for _, container in ipairs(containerFolder:GetDescendants()) do
-		if container.Name == targetName and (container:IsA("Model") or container:IsA("BasePart")) then
-			local cf = getCFrame(container)
-			if cf then
-				-- teleport to container
-				hrp.CFrame = cf + Vector3.new(0, 3, 0)
+		if container.Name == "Wood" then
+			totalWood += 1
+		end
+	end
 
-				task.wait(uiBuffer)
+	local processedWood = 0
 
-				-- trigger prompt
-				for _, prompt in ipairs(container:GetDescendants()) do
-					if prompt:IsA("ProximityPrompt") then
-						prompt:InputHoldBegin()
-						prompt:InputHoldEnd()
+	-- =========================
+	-- MAIN LOOP
+	-- =========================
+	for _, targetName in ipairs(targetNames) do
+		for _, container in ipairs(containerFolder:GetDescendants()) do
+			if container.Name == targetName then
+				local cf = getCFrame(container)
+				if cf then
+					hrp.CFrame = cf + Vector3.new(0, 3, 0)
+					task.wait(uiBuffer)
+
+					for _, prompt in ipairs(container:GetDescendants()) do
+						if prompt:IsA("ProximityPrompt") then
+							prompt:InputHoldBegin()
+							prompt:InputHoldEnd()
+						end
 					end
-				end
 
-				task.wait(cooldown)
+					task.wait(cooldown)
 
-				-- ✅ TELEPORT AFTER LAST WOOD
-				if targetName == "Wood" then
-					processedWood += 1
-					if processedWood == totalWood then
-						hrp.CFrame = CFrame.new(finalTeleportPosition)
+					if targetName == "Wood" then
+						processedWood += 1
+						if processedWood == totalWood then
+							hrp.CFrame = CFrame.new(finalTeleportPosition)
+						end
 					end
 				end
 			end
 		end
 	end
 end
+
+-- 🔁 run first time
+runScript()
+
+-- 🔁 run again on respawn
+player.CharacterAdded:Connect(function()
+	task.wait(1)
+	runScript()
+end)

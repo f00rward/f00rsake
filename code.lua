@@ -41,7 +41,7 @@ local targetNames = {
 }
 
 -- FINAL TELEPORT POSITION (AFTER LAST WOOD)
-local finalTeleportPosition = Vector3.new(89.567, 761.45, -458.249)
+local finalTeleportPosition = Vector3.new(77.567, 763, -452.249)
 
 -- PLAYER
 local character = player.Character or player.CharacterAdded:Wait()
